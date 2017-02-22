@@ -26,13 +26,14 @@
 //	IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //	CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 import Foundation
 
 // MARK: - DSL for GCD queues
 
 /**
- `GCD` is a convenience enum with cases to get `DispatchQueue` of different quality of service classes, as provided by `DispatchQueue.global` or `DispatchQueue` for main thread or a specific custom queue.
+ `GCD` is a convenience enum with cases to get `DispatchQueue` of different
+ quality of service classes, as provided by `DispatchQueue.global` or
+ `DispatchQueue` for main thread or a specific custom queue.
 
  let mainQueue = GCD.main
  let utilityQueue = GCD.utility
@@ -54,8 +55,6 @@ private enum GCD {
         }
     }
 }
-
-
 
 // MARK: - Async – Struct
 
@@ -123,7 +122,6 @@ public typealias Async = AsyncBlock<Void, Void>
 
 public struct AsyncBlock<In, Out> {
 
-
     // MARK: - Private properties and init
 
     /**
@@ -132,9 +130,9 @@ public struct AsyncBlock<In, Out> {
     private let block: DispatchWorkItem
 
     private let input: Reference<In>?
-    private let output_: Reference<Out>
+    private let _output: Reference<Out>
     public var output: Out? {
-        return output_.value
+        return _output.value
     }
 
     /**
@@ -143,9 +141,8 @@ public struct AsyncBlock<In, Out> {
     private init(_ block: DispatchWorkItem, input: Reference<In>? = nil, output: Reference<Out> = Reference()) {
         self.block = block
         self.input = input
-        self.output_ = output
+        self._output = output
     }
-
 
     // MARK: - Static methods
 
@@ -245,7 +242,6 @@ public struct AsyncBlock<In, Out> {
         return Async.async(after: seconds, block: block, queue: .custom(queue: queue))
     }
 
-
     // MARK: - Private static methods
 
     /**
@@ -274,7 +270,6 @@ public struct AsyncBlock<In, Out> {
         // Wrap block in a struct since @convention(block) () -> Swift.Void can't be extended
         return AsyncBlock<Void, O>(block, output: reference)
     }
-
 
     // MARK: - Instance methods (matches static ones)
 
@@ -399,7 +394,6 @@ public struct AsyncBlock<In, Out> {
         block.cancel()
     }
 
-
     /**
      Convenience function to call `dispatch_block_wait()` on the encapsulated block.
      Waits for the current block to finish, on any given thread.
@@ -416,7 +410,6 @@ public struct AsyncBlock<In, Out> {
             ?? .distantFuture
         return block.wait(timeout: timeout)
     }
-
 
     // MARK: Private instance methods
 
@@ -435,7 +428,7 @@ public struct AsyncBlock<In, Out> {
     private func chain<O>(after seconds: Double? = nil, block chainingBlock: @escaping (Out) -> O, queue: GCD) -> AsyncBlock<Out, O> {
         let reference = Reference<O>()
         let dispatchWorkItem = DispatchWorkItem(block: {
-            reference.value = chainingBlock(self.output_.value!)
+            reference.value = chainingBlock(self._output.value!)
         })
 
         let queue = queue.queue
@@ -449,10 +442,9 @@ public struct AsyncBlock<In, Out> {
         }
 
         // See Async.async() for comments
-        return AsyncBlock<Out, O>(dispatchWorkItem, input: self.output_, output: reference)
+        return AsyncBlock<Out, O>(dispatchWorkItem, input: self._output, output: reference)
     }
 }
-
 
 // MARK: - Apply - DSL for `dispatch_apply`
 
@@ -482,7 +474,7 @@ public struct Apply {
          - iterations: How many times the block should be run. Index provided to block goes from `0..<iterations`
          - block: The block that is to be passed to be run on a .
      */
-    public static func userInteractive(_ iterations: Int, block: @escaping (Int) -> ()) {
+    public static func userInteractive(_ iterations: Int, block: @escaping (Int) -> Void) {
         GCD.userInteractive.queue.async {
             DispatchQueue.concurrentPerform(iterations: iterations, execute: block)
         }
@@ -495,7 +487,7 @@ public struct Apply {
          - iterations: How many times the block should be run. Index provided to block goes from `0..<iterations`
          - block: The block that is to be passed to be run on a .
      */
-    public static func userInitiated(_ iterations: Int, block: @escaping (Int) -> ()) {
+    public static func userInitiated(_ iterations: Int, block: @escaping (Int) -> Void) {
         GCD.userInitiated.queue.async {
             DispatchQueue.concurrentPerform(iterations: iterations, execute: block)
         }
@@ -508,7 +500,7 @@ public struct Apply {
          - iterations: How many times the block should be run. Index provided to block goes from `0..<iterations`
          - block: The block that is to be passed to be run on a .
      */
-    public static func utility(_ iterations: Int, block: @escaping (Int) -> ()) {
+    public static func utility(_ iterations: Int, block: @escaping (Int) -> Void) {
         GCD.utility.queue.async {
             DispatchQueue.concurrentPerform(iterations: iterations, execute: block)
         }
@@ -521,7 +513,7 @@ public struct Apply {
          - iterations: How many times the block should be run. Index provided to block goes from `0..<iterations`
          - block: The block that is to be passed to be run on a .
      */
-    public static func background(_ iterations: Int, block: @escaping (Int) -> ()) {
+    public static func background(_ iterations: Int, block: @escaping (Int) -> Void) {
         GCD.background.queue.async {
             DispatchQueue.concurrentPerform(iterations: iterations, execute: block)
         }
@@ -534,13 +526,12 @@ public struct Apply {
          - iterations: How many times the block should be run. Index provided to block goes from `0..<iterations`
          - block: The block that is to be passed to be run on a .
      */
-    public static func custom(queue: DispatchQueue, iterations: Int, block: @escaping (Int) -> ()) {
+    public static func custom(queue: DispatchQueue, iterations: Int, block: @escaping (Int) -> Void) {
         queue.async {
             DispatchQueue.concurrentPerform(iterations: iterations, execute: block)
         }
     }
 }
-
 
 // MARK: - AsyncGroup – Struct
 
@@ -602,7 +593,6 @@ public struct AsyncGroup {
         group = DispatchGroup()
     }
 
-
     /**
      Convenience for `dispatch_group_async()`
 
@@ -633,7 +623,6 @@ public struct AsyncGroup {
     public func leave() {
         group.leave()
     }
-
 
     // MARK: - Instance methods
 
@@ -717,7 +706,6 @@ public struct AsyncGroup {
     }
 }
 
-
 // MARK: - Extension for `qos_class_t`
 
 /**
@@ -729,21 +717,18 @@ public extension qos_class_t {
      Description of the `qos_class_t`. E.g. "Main", "User Interactive", etc. for the given Quality of Service class.
      */
     var description: String {
-        get {
-            switch self {
-            case qos_class_main(): return "Main"
-            case DispatchQoS.QoSClass.userInteractive.rawValue: return "User Interactive"
-            case DispatchQoS.QoSClass.userInitiated.rawValue: return "User Initiated"
-            case DispatchQoS.QoSClass.default.rawValue: return "Default"
-            case DispatchQoS.QoSClass.utility.rawValue: return "Utility"
-            case DispatchQoS.QoSClass.background.rawValue: return "Background"
-            case DispatchQoS.QoSClass.unspecified.rawValue: return "Unspecified"
-            default: return "Unknown"
-            }
+        switch self {
+        case qos_class_main(): return "Main"
+        case DispatchQoS.QoSClass.userInteractive.rawValue: return "User Interactive"
+        case DispatchQoS.QoSClass.userInitiated.rawValue: return "User Initiated"
+        case DispatchQoS.QoSClass.default.rawValue: return "Default"
+        case DispatchQoS.QoSClass.utility.rawValue: return "Utility"
+        case DispatchQoS.QoSClass.background.rawValue: return "Background"
+        case DispatchQoS.QoSClass.unspecified.rawValue: return "Unspecified"
+        default: return "Unknown"
         }
     }
 }
-
 
 // MARK: - Extension for `DispatchQueue.GlobalAttributes`
 
@@ -753,16 +738,14 @@ public extension qos_class_t {
 public extension DispatchQoS.QoSClass {
 
     var description: String {
-        get {
-            switch self {
-            case DispatchQoS.QoSClass(rawValue: qos_class_main())!: return "Main"
-            case .userInteractive: return "User Interactive"
-            case .userInitiated: return "User Initiated"
-            case .default: return "Default"
-            case .utility: return "Utility"
-            case .background: return "Background"
-            case .unspecified: return "Unspecified"
-            }
+        switch self {
+        case DispatchQoS.QoSClass(rawValue: qos_class_main())!: return "Main"
+        case .userInteractive: return "User Interactive"
+        case .userInitiated: return "User Initiated"
+        case .default: return "Default"
+        case .utility: return "Utility"
+        case .background: return "Background"
+        case .unspecified: return "Unspecified"
         }
     }
 }
