@@ -28,3 +28,9 @@ DerivedData
 .idea/
 *.hmap
 *.xccheckout
+
+# CLI build
+.build/
+
+# Vim
+.*.swp
