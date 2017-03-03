@@ -1,4 +1,7 @@
 import Foundation
+#if os(Linux)
+import Dispatch
+#endif
 
 // MARK: - Apply - DSL for `dispatch_apply`
 

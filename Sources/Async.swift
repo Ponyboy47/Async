@@ -27,6 +27,9 @@
 //	CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import Foundation
+#if os(Linux)
+import Dispatch
+#endif
 
 // MARK: - DSL for GCD queues
 

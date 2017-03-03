@@ -43,14 +43,10 @@ print("Both asynchronous blocks are complete")
 ```
 
 ### Install
-#### CocoaPods
-```ruby
-use_frameworks!
-pod "AsyncSwift"
-```
-#### Carthage
-```ruby
-github "duemunk/Async"
+#### Swift Package Manager
+Add the following line to your Package.swift
+```swift
+.Package(url: "https://github.com/Ponyboy47/Async.git", majorVersion: 2)
 ```
 
 ### Benefits

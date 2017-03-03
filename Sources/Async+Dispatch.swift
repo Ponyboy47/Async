@@ -1,4 +1,5 @@
 import Foundation
+#if !os(Linux)
 
 // MARK: - Extension for `qos_class_t`
 
@@ -43,3 +44,4 @@ public extension DispatchQoS.QoSClass {
         }
     }
 }
+#endif
