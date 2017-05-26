@@ -244,6 +244,96 @@ public struct AsyncBlock<In, Out> {
         return Async.async(after: seconds, block: block, queue: .custom(queue: queue))
     }
 
+    /**
+    Sends the a block to be run synchronously on the main thread.
+
+    - parameters:
+        - block: The block that is to be passed to be run on the main queue
+
+    - returns: An `Async` struct
+
+    - SeeAlso: Has parity with non-static method
+    */
+    @discardableResult
+    public static func mainSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return AsyncBlock.sync(block: block, queue: .main)
+    }
+
+    /**
+     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INTERACTIVE.
+
+     - parameters:
+        - block: The block that is to be passed to be run on the queue
+
+     - returns: An `Async` struct
+
+     - SeeAlso: Has parity with non-static method
+     */
+    @discardableResult
+    public static func userInteractiveSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return AsyncBlock.sync(block: block, queue: .userInteractive)
+    }
+
+    /**
+     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INITIATED.
+
+     - parameters:
+        - block: The block that is to be passed to be run on the queue
+
+     - returns: An `Async` struct
+
+     - SeeAlso: Has parity with non-static method
+     */
+    @discardableResult
+    public static func userInitiatedSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return Async.sync(block: block, queue: .userInitiated)
+    }
+
+    /**
+     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_UTILITY.
+
+     - parameters:
+        - block: The block that is to be passed to be run on queue
+
+     - returns: An `Async` struct
+
+     - SeeAlso: Has parity with non-static method
+     */
+    @discardableResult
+    public static func utilitySync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return Async.sync(block: block, queue: .utility)
+    }
+
+    /**
+     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_BACKGROUND.
+
+     - parameters:
+        - block: The block that is to be passed to be run on the queue
+
+     - returns: An `Async` struct
+
+     - SeeAlso: Has parity with non-static method
+     */
+    @discardableResult
+    public static func backgroundSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return Async.sync(block: block, queue: .background)
+    }
+
+    /**
+     Sends the a block to be run synchronously on a custom queue.
+
+     - parameters:
+        - block: The block that is to be passed to be run on the queue
+
+     - returns: An `Async` struct
+
+     - SeeAlso: Has parity with non-static method
+     */
+    @discardableResult
+    public static func customSync<O>(queue: DispatchQueue, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+        return Async.sync(block: block, queue: .custom(queue: queue))
+    }
+
     // MARK: - Private static methods
 
     /**
@@ -268,6 +358,28 @@ public struct AsyncBlock<In, Out> {
         } else {
             queue.queue.async(execute: block)
         }
+
+        // Wrap block in a struct since @convention(block) () -> Swift.Void can't be extended
+        return AsyncBlock<Void, O>(block, output: reference)
+    }
+
+    /**
+     Convenience for dispatch_sync(). Encapsulates the block in a "true" GCD block using DISPATCH_BLOCK_INHERIT_QOS_CLASS.
+
+     - parameters:
+         - block: The block that is to be passed to be run on the `queue`
+         - queue: The queue on which the `block` is run.
+
+     - returns: An `Async` struct which encapsulates the `@convention(block) () -> Swift.Void`
+     */
+
+    private static func sync<O>(block: @escaping (Void) -> O, queue: GCD) -> AsyncBlock<Void, O> {
+        let reference = Reference<O>()
+        let block = DispatchWorkItem(block: {
+            reference.value = block()
+        })
+
+        queue.queue.sync(execute: block)
 
         // Wrap block in a struct since @convention(block) () -> Swift.Void can't be extended
         return AsyncBlock<Void, O>(block, output: reference)
