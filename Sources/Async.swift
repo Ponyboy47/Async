@@ -63,8 +63,8 @@ private class Reference<T> {
     var value: T?
 }
 
-typealias Async = AsyncBlock<Void, Void>.Async
-typealias Sync = AsyncBlock<Void, Void>.Sync
+public typealias Async = AsyncBlock<Void, Void>.Async
+public typealias Sync = AsyncBlock<Void, Void>.Sync
 
 // MARK: - Async – Struct
 
