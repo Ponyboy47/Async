@@ -7,8 +7,11 @@
 //
 
 import Foundation
+#if os(Linux)
+import Dispatch
+#endif
 import XCTest
-import Async
+@testable import Async
 
 class AsyncGroupTests: XCTestCase {
 
@@ -199,3 +202,24 @@ class AsyncGroupTests: XCTestCase {
     }
 
 }
+
+#if os(Linux)
+extension AsyncGroupTests {
+    static var allTests: [(String, AsyncGroupTests -> () throws -> Void)] {
+        return [
+            ("testMainGroup", testMainGroup),
+            ("testUserInteractiveGroup", testUserInteractiveGroup),
+            ("testUserInitiatedGroup", testUserInitiatedGroup),
+            ("testUtilityGroup", testUtilityGroup),
+            ("testBackgroundGroup", testBackgroundGroup),
+            ("testGroupCustomQueueConcurrent", testGroupCustomQueueConcurrent),
+            ("testGroupCustomQueueSerial", testGroupCustomQueueSerial),
+            ("testGroupWait", testGroupWait),
+            ("testGroupWaitMax", testGroupWaitMax),
+            ("testMultipleGroups", testMultipleGroups),
+            ("testCustomBlockGroups", testCustomBlockGroups),
+            ("testNestedAsyncGroups", testNestedAsyncGroups)
+        ]
+    }
+}
+#endif

@@ -1,6 +1,11 @@
 import Foundation
-#if !os(Linux)
+#if os(Linux)
+import Dispatch
 
+typealias qos_class_t = Int
+#endif
+
+#if !os(Linux)
 // MARK: - Extension for `qos_class_t`
 
 /**
@@ -24,6 +29,7 @@ public extension qos_class_t {
         }
     }
 }
+#endif
 
 // MARK: - Extension for `DispatchQueue.GlobalAttributes`
 
@@ -33,6 +39,7 @@ public extension qos_class_t {
 public extension DispatchQoS.QoSClass {
 
     var description: String {
+        #if !os(Linux)
         switch self {
         case DispatchQoS.QoSClass(rawValue: qos_class_main())!: return "Main"
         case .userInteractive: return "User Interactive"
@@ -42,6 +49,17 @@ public extension DispatchQoS.QoSClass {
         case .background: return "Background"
         case .unspecified: return "Unspecified"
         }
+        #else
+        switch self {
+        case .userInteractive: return "User Interactive"
+        case .userInitiated: return "User Initiated"
+        case .default: return "Default"
+        case .utility: return "Utility"
+        case .background: return "Background"
+        case .unspecified: return "Unspecified"
+        default: return "Main"
+        }
+        #endif
     }
 }
-#endif
+//#endif

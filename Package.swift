@@ -26,8 +26,5 @@
 import PackageDescription
 
 let package = Package(
-    name: "Async",
-    exclude: [
-        "Tests"
-    ]
+    name: "Async"
 )

@@ -7,9 +7,11 @@
 //
 
 import Foundation
+#if os(Linux)
+import Dispatch
+#endif
 import XCTest
-import Async
-
+@testable import Async
 
 extension qos_class_t: CustomDebugStringConvertible {
     public var debugDescription: String {
@@ -654,3 +656,47 @@ class AsyncTests: XCTestCase {
     }
 
 }
+
+#if os(Linux)
+extension Async {
+    static var allTests: [(String, AsyncTests -> () throws -> Void)] {
+        return [
+            ("testGCD", testGCD),
+            ("testAsyncMain", testAsyncMain),
+            ("testAsyncUserInteractive", testAsyncUserInteractive),
+            ("testAsyncUserInitiated", testAsyncUserInitiated),
+            ("testAsyncUtility", testAsyncUtility),
+            ("testAsyncBackground", testAsyncBackground),
+            ("testAsyncCustomQueueConcurrent", testAsyncCustomQueueConcurrent),
+            ("testAsyncCustomQueueSerial", testAsyncCustomQueueSerial),
+            ("testAsyncBackgroundToMain", testAsyncBackgroundToMain),
+            ("testChaining", testChaining),
+            ("testAsyncCustomQueueChaining", testAsyncCustomQueueChaining),
+            ("testAfterGCD", testAfterGCD),
+            ("testAfterMain", testAfterMain),
+            ("testAfterUserInteractive", testAfterUserInteractive),
+            ("testAfterUserInitated", testAfterUserInitated),
+            ("testAfterUtility", testAfterUtility),
+            ("testAfterBackground", testAfterBackground),
+            ("testAfterCustomQueue", testAfterCustomQueue),
+            ("testAfterChainedMix" testAfterChainedMix),
+            ("testAfterChainedUserInteractive", testAfterChainedUserInteractive),
+            ("testAfterChainedUserInitiated", testAfterChainedUserInitiated),
+            ("testAfterChainedUtility", testAfterChainedUtility),
+            ("testAfterChainedBackground", testAfterChainedBackground),
+            ("testCancel", testCancel),
+            ("testWait", testWait),
+            ("testWaitMax", testWaitMax),
+            ("testGenericsChain", testGenericsChain),
+            ("testGenericsWait", testGenericsWait),
+            ("testGenericsWaitMax", testGenericsWaitMax),
+            ("testApplyUserInteractive", testApplyUserInteractive),
+            ("testApplyUserInitiated", testApplyUserInitiated),
+            ("testApplyUtility", testApplyUtility),
+            ("testApplyBackground", testApplyBackground),
+            ("testApplyCustomQueueConcurrent", testApplyCustomQueueConcurrent),
+            ("testApplyCustomQueueSerial", testApplyCustomQueueSerial)
+        ]
+    }
+}
+#endif
