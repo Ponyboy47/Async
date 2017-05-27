@@ -1,5 +1,5 @@
 //
-//  Async.swift
+//  AsyncBlockswift
 //
 //  Created by Tobias DM on 15/07/14.
 //
@@ -63,16 +63,17 @@ private class Reference<T> {
     var value: T?
 }
 
-public typealias Async = AsyncBlock<Void, Void>
+typealias Async = AsyncBlock<Void, Void>.Async
+typealias Sync = AsyncBlock<Void, Void>.Sync
 
 // MARK: - Async – Struct
 
 /**
-The **Async** struct is the main part of the Async.framework. Handles an internally `@convention(block) () -> Swift.Void`.
+The **Async** struct is the main part of the AsyncBlockframework. Handles an internally `@convention(block) () -> Swift.Void`.
 
 Chainable dispatch blocks with GCD:
 
-    Async.background {
+    AsyncBlockbackground {
     // Run on background queue
     }.main {
     // Run on main queue, after the previous block
@@ -80,31 +81,31 @@ Chainable dispatch blocks with GCD:
 
 All moderns queue classes:
 
-    Async.main {}
-    Async.userInteractive {}
-    Async.userInitiated {}
-    Async.utility {}
-    Async.background {}
+    AsyncBlockmain {}
+    AsyncBlockuserInteractive {}
+    AsyncBlockuserInitiated {}
+    AsyncBlockutility {}
+    AsyncBlockbackground {}
 
 Custom queues:
 
     let customQueue = dispatch_queue_create("Label", DISPATCH_QUEUE_CONCURRENT)
-    Async.customQueue(customQueue) {}
+    AsyncBlockcustomQueue(customQueue) {}
 
 Dispatch block after delay:
 
     let seconds = 0.5
-    Async.main(after: seconds) {}
+    AsyncBlockmain(after: seconds) {}
 
 Cancel blocks not yet dispatched
 
-    let block1 = Async.background {
+    let block1 = AsyncBlockbackground {
         // Some work
     }
     let block2 = block1.background {
         // Some other work
     }
-    Async.main {
+    AsyncBlockmain {
         // Cancel async to allow block1 to begin
         block1.cancel() // First block is NOT cancelled
         block2.cancel() // Second block IS cancelled
@@ -112,7 +113,7 @@ Cancel blocks not yet dispatched
 
 Wait for block to finish:
 
-    let block = Async.background {
+    let block = AsyncBlockbackground {
         // Do stuff
     }
     // Do other stuff
@@ -136,203 +137,212 @@ public struct AsyncBlock<In, Out> {
     public var output: Out? {
         return _output.value
     }
+    public struct Async {
+        /**
+        Sends the a block to be run asynchronously on the main thread.
+
+        - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the main queue
+
+        - returns: An `Async` struct
+
+        - SeeAlso: Has parity with non-static method
+        */
+        @discardableResult
+        public static func main<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .main)
+        }
+
+        /**
+         Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_USER_INTERACTIVE.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func userInteractive<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .userInteractive)
+        }
+
+        /**
+         Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_USER_INITIATED.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func userInitiated<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .userInitiated)
+        }
+
+        /**
+         Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_UTILITY.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func utility<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .utility)
+        }
+
+        /**
+         Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_BACKGROUND.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func background<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .background)
+        }
+
+        /**
+         Sends the a block to be run asynchronously on a custom queue.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func custom<O>(queue: DispatchQueue, after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.async(after: seconds, block: block, queue: .custom(queue: queue))
+        }
+    }
+    public struct Sync {
+        /**
+        Sends the a block to be run synchronously on the main thread.
+
+        - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the main queue
+
+        - returns: An `Async` struct
+
+        - SeeAlso: Has parity with non-static method
+        */
+        @discardableResult
+        public static func main<O>(after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .main)
+        }
+
+        /**
+         Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INTERACTIVE.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func userInteractive<O>(after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .userInteractive)
+        }
+
+        /**
+         Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INITIATED.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func userInitiated<O>(after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .userInitiated)
+        }
+
+        /**
+         Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_UTILITY.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func utility<O>(after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .utility)
+        }
+
+        /**
+         Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_BACKGROUND.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func background<O>(after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .background)
+        }
+
+        /**
+         Sends the a block to be run synchronously on a custom queue.
+
+         - parameters:
+            - after: After how many seconds the block should be run.
+            - block: The block that is to be passed to be run on the queue
+
+         - returns: An `Async` struct
+
+         - SeeAlso: Has parity with non-static method
+         */
+        @discardableResult
+        public static func custom<O>(queue: DispatchQueue, after seconds: UInt32? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
+            return AsyncBlock.sync(after: seconds, block: block, queue: .custom(queue: queue))
+        }
+    }
+
 
     /**
      Private init that takes a `@convention(block) () -> Swift.Void`
      */
-    private init(_ block: DispatchWorkItem, input: Reference<In>? = nil, output: Reference<Out> = Reference()) {
+    private init(_ block: DispatchWorkItem, input: Reference<In>? = nil, output: Reference<Out> = Reference(), async: Bool = true) {
         self.block = block
         self.input = input
         self._output = output
     }
 
     // MARK: - Static methods
-
-    /**
-    Sends the a block to be run asynchronously on the main thread.
-
-    - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on the main queue
-
-    - returns: An `Async` struct
-
-    - SeeAlso: Has parity with non-static method
-    */
-    @discardableResult
-    public static func main<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return AsyncBlock.async(after: seconds, block: block, queue: .main)
-    }
-
-    /**
-     Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_USER_INTERACTIVE.
-
-     - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func userInteractive<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return AsyncBlock.async(after: seconds, block: block, queue: .userInteractive)
-    }
-
-    /**
-     Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_USER_INITIATED.
-
-     - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func userInitiated<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.async(after: seconds, block: block, queue: .userInitiated)
-    }
-
-    /**
-     Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_UTILITY.
-
-     - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func utility<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.async(after: seconds, block: block, queue: .utility)
-    }
-
-    /**
-     Sends the a block to be run asynchronously on a queue with a quality of service of QOS_CLASS_BACKGROUND.
-
-     - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func background<O>(after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.async(after: seconds, block: block, queue: .background)
-    }
-
-    /**
-     Sends the a block to be run asynchronously on a custom queue.
-
-     - parameters:
-        - after: After how many seconds the block should be run.
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func custom<O>(queue: DispatchQueue, after seconds: Double? = nil, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.async(after: seconds, block: block, queue: .custom(queue: queue))
-    }
-
-    /**
-    Sends the a block to be run synchronously on the main thread.
-
-    - parameters:
-        - block: The block that is to be passed to be run on the main queue
-
-    - returns: An `Async` struct
-
-    - SeeAlso: Has parity with non-static method
-    */
-    @discardableResult
-    public static func mainSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return AsyncBlock.sync(block: block, queue: .main)
-    }
-
-    /**
-     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INTERACTIVE.
-
-     - parameters:
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func userInteractiveSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return AsyncBlock.sync(block: block, queue: .userInteractive)
-    }
-
-    /**
-     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_USER_INITIATED.
-
-     - parameters:
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func userInitiatedSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.sync(block: block, queue: .userInitiated)
-    }
-
-    /**
-     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_UTILITY.
-
-     - parameters:
-        - block: The block that is to be passed to be run on queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func utilitySync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.sync(block: block, queue: .utility)
-    }
-
-    /**
-     Sends the a block to be run synchronously on a queue with a quality of service of QOS_CLASS_BACKGROUND.
-
-     - parameters:
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func backgroundSync<O>(_ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.sync(block: block, queue: .background)
-    }
-
-    /**
-     Sends the a block to be run synchronously on a custom queue.
-
-     - parameters:
-        - block: The block that is to be passed to be run on the queue
-
-     - returns: An `Async` struct
-
-     - SeeAlso: Has parity with non-static method
-     */
-    @discardableResult
-    public static func customSync<O>(queue: DispatchQueue, _ block: @escaping (Void) -> O) -> AsyncBlock<Void, O> {
-        return Async.sync(block: block, queue: .custom(queue: queue))
-    }
 
     // MARK: - Private static methods
 
@@ -373,16 +383,22 @@ public struct AsyncBlock<In, Out> {
      - returns: An `Async` struct which encapsulates the `@convention(block) () -> Swift.Void`
      */
 
-    private static func sync<O>(block: @escaping (Void) -> O, queue: GCD) -> AsyncBlock<Void, O> {
+    private static func sync<O>(after seconds: UInt32? = nil, block: @escaping (Void) -> O, queue: GCD) -> AsyncBlock<Void, O> {
         let reference = Reference<O>()
         let block = DispatchWorkItem(block: {
             reference.value = block()
         })
 
+        if let seconds = seconds {
+            let wait = DispatchWorkItem(block: {
+                sleep(seconds)
+            })
+            queue.queue.sync(execute: wait)
+        }
         queue.queue.sync(execute: block)
 
         // Wrap block in a struct since @convention(block) () -> Swift.Void can't be extended
-        return AsyncBlock<Void, O>(block, output: reference)
+        return AsyncBlock<Void, O>(block, output: reference, async: false)
     }
 
     // MARK: - Instance methods (matches static ones)
@@ -491,13 +507,13 @@ public struct AsyncBlock<In, Out> {
 
     Usage:
 
-        let block1 = Async.background {
+        let block1 = AsyncBlockbackground {
             // Some work
         }
         let block2 = block1.background {
             // Some other work
         }
-        Async.main {
+        AsyncBlockmain {
             // Cancel async to allow block1 to begin
             block1.cancel() // First block is NOT cancelled
             block2.cancel() // Second block IS cancelled
@@ -555,7 +571,7 @@ public struct AsyncBlock<In, Out> {
             block.notify(queue: queue, execute: dispatchWorkItem)
         }
 
-        // See Async.async() for comments
+        // See AsyncBlock.async() for comments
         return AsyncBlock<Out, O>(dispatchWorkItem, input: self._output, output: reference)
     }
 }
