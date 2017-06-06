@@ -1,5 +1,5 @@
 # Async
-[![](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20linux-lightgrey.svg)]() [![](http://img.shields.io/badge/OS%20X-10.10%2B-blue.svg)]() [![](http://img.shields.io/badge/iOS-8.0%2B-blue.svg)]() [![](http://img.shields.io/badge/tvOS-9.0%2B-blue.svg)]() [![](http://img.shields.io/badge/watchOS-2.0%2B-blue.svg)]() [![](http://img.shields.io/badge/linux-14.04%2B-blue.svg)]() [![](http://img.shields.io/badge/Swift-3.1-blue.svg)]() [![](https://travis-ci.org/Ponyboy47/Async.svg)](https://travis-ci.org/Ponyboy47/Async) [![Swift Package Manager compatible](https://img.shields.io/badge/SwiftPM-compatible-4BC51D.svg)]()
+[![](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20linux-lightgrey.svg)]() [![](http://img.shields.io/badge/OS%20X-10.10%2B-blue.svg)]() [![](http://img.shields.io/badge/iOS-8.0%2B-blue.svg)]() [![](http://img.shields.io/badge/tvOS-9.0%2B-blue.svg)]() [![](http://img.shields.io/badge/watchOS-2.0%2B-blue.svg)]() [![](http://img.shields.io/badge/linux-14.04%2B-blue.svg)]() [![](http://img.shields.io/badge/Swift-3.1-blue.svg)]() [![](https://travis-ci.org/Ponyboy47/Async.svg)](https://travis-ci.org/Ponyboy47/Async) [![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-4BC51D.svg)]()
 
 
 
