@@ -29,6 +29,18 @@ DispatchQueue.global(qos: .userInitiated).async {
 }
 ```
 
+**Sync** sugar is just like Async, but the blocks are run synchronously instead:
+```swift
+var test = 1
+Sync.userInitiated {
+    test = 2
+}.background {
+    if test % 2 == 0 {
+        print("Test variable is divisible by 2")
+    }
+}
+```
+
 **AsyncGroup** sugar looks like this:
 ```swift
 let group = AsyncGroup()
@@ -41,6 +53,7 @@ group.background {
 group.wait()
 print("Both asynchronous blocks are complete")
 ```
+NOTE: Everything you can do with Async you can also do with Sync, but grouping is only available Asynchronously so there is no SyncGroup
 
 ### Install
 #### Swift Package Manager
@@ -213,6 +226,22 @@ group.background {
 group.wait()
 // Do rest of stuff
 ```
+
+Or notify a block to run once the group is finished
+```swift
+let group = AsyncGroup()
+group.background {
+    // Something here
+}
+group.background {
+    // Something else going on in the background
+}
+// Block called once the group is finished
+group.notify(queue: .main) {
+    // Run this stuff now that the group above is done
+}
+```
+
 Custom asynchronous operations:
 ```swift
 let group = AsyncGroup()
