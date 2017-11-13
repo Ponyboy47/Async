@@ -34,3 +34,5 @@ DerivedData
 
 # Vim
 .*.swp
+
+.AppleDouble
