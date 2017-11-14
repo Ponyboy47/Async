@@ -45,7 +45,9 @@ class AsyncTests: XCTestCase {
         let qos: DispatchQoS.QoSClass = .background
         let queue = DispatchQueue.global(qos: qos)
         queue.async {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), qos.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -60,7 +62,7 @@ class AsyncTests: XCTestCase {
         Async.main {
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             XCTAssert(calledStuffAfterSinceAsync, "Should be async")
@@ -74,7 +76,9 @@ class AsyncTests: XCTestCase {
     func testAsyncUserInteractive() {
         let expectation = self.expectation(description: "Expected on user interactive queue")
         Async.userInteractive {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -83,7 +87,9 @@ class AsyncTests: XCTestCase {
     func testAsyncUserInitiated() {
         let expectation = self.expectation(description: "Expected on user initiated queue")
         Async.userInitiated {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -92,7 +98,9 @@ class AsyncTests: XCTestCase {
     func testAsyncUtility() {
         let expectation = self.expectation(description: "Expected on utility queue")
         Async.utility {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -101,7 +109,9 @@ class AsyncTests: XCTestCase {
     func testAsyncBackground() {
         let expectation = self.expectation(description: "Expected on background queue")
         Async.background {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -140,12 +150,14 @@ class AsyncTests: XCTestCase {
         let expectation = self.expectation(description: "Expected on background to main queue")
         var wasInBackground = false
         Async.background {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             wasInBackground = true
         }.main {
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             XCTAssert(wasInBackground, "Was in background first")
@@ -155,30 +167,47 @@ class AsyncTests: XCTestCase {
     }
 
     func testChaining() {
-        let expectation = self.expectation(description: "Expected On \(qos_class_self()) (expected \(DispatchQoS.QoSClass.userInitiated.rawValue))")
+        let thread: String
+        let expect: String
+        #if !os(Linux)
+            thread = "\(qos_class_self())"
+            expect = "\(DispatchQoS.QoSClass.userInitiated.rawValue)"
+        #else
+            thread = "a certain thread"
+            expect = "\(DispatchQoS.QoSClass.userInitiated)"
+        #endif
+        let expectation = self.expectation(description: "Expected On \(thread) (expected \(expect))")
         var id = 0
         Async.main {
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             id += 1
             XCTAssertEqual(id, 1, "Count main queue")
         }.userInteractive {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             id += 1
             XCTAssertEqual(id, 2, "Count user interactive queue")
         }.userInitiated {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             id += 1
             XCTAssertEqual(id, 3, "Count user initiated queue")
         }.utility {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             id += 1
             XCTAssertEqual(id, 4, "Count utility queue")
         }.background {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             id += 1
             XCTAssertEqual(id, 5, "Count background queue")
             expectation.fulfill()
@@ -216,7 +245,9 @@ class AsyncTests: XCTestCase {
         let block = DispatchWorkItem {
             let timePassed = Date().timeIntervalSince(date)
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), qos.rawValue)
+            #endif
             expectation.fulfill()
         }
         queue.asyncAfter(deadline: time, execute: block)
@@ -232,7 +263,7 @@ class AsyncTests: XCTestCase {
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             expectation.fulfill()
@@ -247,7 +278,9 @@ class AsyncTests: XCTestCase {
         Async.userInteractive(after: timeDelay) {
             let timePassed = Date().timeIntervalSince(date)
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeDelay + timeMargin, handler: nil)
@@ -260,7 +293,9 @@ class AsyncTests: XCTestCase {
         Async.userInitiated(after: timeDelay) {
             let timePassed = Date().timeIntervalSince(date)
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeDelay + timeMargin, handler: nil)
@@ -273,7 +308,9 @@ class AsyncTests: XCTestCase {
         Async.utility(after: timeDelay) {
             let timePassed = Date().timeIntervalSince(date)
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeDelay + timeMargin, handler: nil)
@@ -286,7 +323,9 @@ class AsyncTests: XCTestCase {
         Async.background(after: timeDelay) {
             let timePassed = Date().timeIntervalSince(date)
             XCTAssert(timePassed >= lowerTimeDelay, "Should wait \(timePassed) >= \(lowerTimeDelay) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeDelay + timeMargin, handler: nil)
@@ -327,7 +366,9 @@ class AsyncTests: XCTestCase {
             let timePassed = Date().timeIntervalSince(date1)
             XCTAssert(timePassed >= lowerTimeDelay1, "Should wait \(timePassed) >= \(lowerTimeDelay1) seconds before firing")
             XCTAssert(timePassed < upperTimeDelay1, "Shouldn't wait \(timePassed), but <\(upperTimeDelay1) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
 
             date2 = Date() // Update
         }.utility(after: timeDelay2) {
@@ -336,7 +377,9 @@ class AsyncTests: XCTestCase {
 
             let timePassed = Date().timeIntervalSince(date2)
             XCTAssert(timePassed >= lowerTimeDelay2, "Should wait \(timePassed) >= \(lowerTimeDelay2) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: (timeDelay1 + timeDelay2) + timeMargin*2, handler: nil)
@@ -359,7 +402,9 @@ class AsyncTests: XCTestCase {
             let timePassed = Date().timeIntervalSince(date1)
             XCTAssert(timePassed >= lowerTimeDelay1, "Should wait \(timePassed) >= \(lowerTimeDelay1) seconds before firing")
             XCTAssert(timePassed < upperTimeDelay1, "Shouldn't wait \(timePassed), but <\(upperTimeDelay1) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
 
             date2 = Date() // Update
         }.userInteractive(after: timeDelay2) {
@@ -368,7 +413,9 @@ class AsyncTests: XCTestCase {
 
             let timePassed = Date().timeIntervalSince(date2)
             XCTAssert(timePassed >= lowerTimeDelay2, "Should wait \(timePassed) >= \(lowerTimeDelay2) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: (timeDelay1 + timeDelay2) + timeMargin*2, handler: nil)
@@ -391,7 +438,9 @@ class AsyncTests: XCTestCase {
             let timePassed = Date().timeIntervalSince(date1)
             XCTAssert(timePassed >= lowerTimeDelay1, "Should wait \(timePassed) >= \(lowerTimeDelay1) seconds before firing")
             XCTAssert(timePassed < upperTimeDelay1, "Shouldn't wait \(timePassed), but <\(upperTimeDelay1) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
 
             date2 = Date() // Update
         }.userInitiated(after: timeDelay2) {
@@ -400,7 +449,9 @@ class AsyncTests: XCTestCase {
 
             let timePassed = Date().timeIntervalSince(date2)
             XCTAssert(timePassed >= lowerTimeDelay2, "Should wait \(timePassed) >= \(lowerTimeDelay2) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: (timeDelay1 + timeDelay2) + timeMargin*2, handler: nil)
@@ -423,7 +474,9 @@ class AsyncTests: XCTestCase {
             let timePassed = Date().timeIntervalSince(date1)
             XCTAssert(timePassed >= lowerTimeDelay1, "Should wait \(timePassed)>=\(lowerTimeDelay1) seconds before firing")
             XCTAssert(timePassed < upperTimeDelay1, "Shouldn't wait \(timePassed), but <\(upperTimeDelay1) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
 
             date2 = Date() // Update
         }.utility(after: timeDelay2) {
@@ -432,7 +485,9 @@ class AsyncTests: XCTestCase {
 
             let timePassed = Date().timeIntervalSince(date2)
             XCTAssert(timePassed >= lowerTimeDelay2, "Should wait \(timePassed) >= \(lowerTimeDelay2) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: (timeDelay1 + timeDelay2) * 2, handler: nil)
@@ -455,7 +510,9 @@ class AsyncTests: XCTestCase {
             let timePassed = Date().timeIntervalSince(date1)
             XCTAssert(timePassed >= lowerTimeDelay1, "Should wait \(timePassed) >= \(lowerTimeDelay1) seconds before firing")
             XCTAssert(timePassed < upperTimeDelay1, "Shouldn't wait \(timePassed), but <\(upperTimeDelay1) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
 
             date2 = Date() // Update
         }.background(after: timeDelay2) {
@@ -464,7 +521,9 @@ class AsyncTests: XCTestCase {
 
             let timePassed = Date().timeIntervalSince(date2)
             XCTAssert(timePassed >= lowerTimeDelay2, "Should wait \(timePassed) >= \(lowerTimeDelay2) seconds before firing")
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: (timeDelay1 + timeDelay2) + timeMargin*2, handler: nil)
@@ -541,13 +600,15 @@ class AsyncTests: XCTestCase {
         let testValue = 10
 
         Async.background {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectationBackground.fulfill()
             return testValue
         }.main { (value: Int) in
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             expectationMain.fulfill()
@@ -591,7 +652,9 @@ class AsyncTests: XCTestCase {
         let iterations = 0..<count
         let expectations = iterations.map { expectation(description: "\($0)") }
         Apply.userInteractive(count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -602,7 +665,9 @@ class AsyncTests: XCTestCase {
         let iterations = 0..<count
         let expectations = iterations.map { expectation(description: "\($0)") }
         Apply.userInitiated(count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: 1, handler: nil)
@@ -613,7 +678,9 @@ class AsyncTests: XCTestCase {
         let iterations = 0..<count
         let expectations = iterations.map { expectation(description: "\($0)") }
         Apply.utility(count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: 1, handler: nil)
@@ -624,7 +691,9 @@ class AsyncTests: XCTestCase {
         let iterations = 0..<count
         let expectations = iterations.map { expectation(description: "\($0)") }
         Apply.background(count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: 1, handler: nil)
@@ -637,7 +706,9 @@ class AsyncTests: XCTestCase {
         let label = "CustomQueueConcurrentLabel"
         let customQueue = DispatchQueue(label: label, qos: .utility, attributes: [.concurrent])
         Apply.custom(queue: customQueue, iterations: count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), customQueue.qos.qosClass.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: 1, handler: nil)
@@ -650,54 +721,51 @@ class AsyncTests: XCTestCase {
         let label = "CustomQueueSerialLabel"
         let customQueue = DispatchQueue(label: label, qos: .utility, attributes: [])
         Apply.custom(queue: customQueue, iterations: count) { i in
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), customQueue.qos.qosClass.rawValue)
+            #endif
             expectations[i].fulfill()
         }
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    #if os(Linux)
+    static var allTests = [
+        ("testGCD", testGCD),
+        ("testAsyncMain", testAsyncMain),
+        ("testAsyncUserInteractive", testAsyncUserInteractive),
+        ("testAsyncUserInitiated", testAsyncUserInitiated),
+        ("testAsyncUtility", testAsyncUtility),
+        ("testAsyncBackground", testAsyncBackground),
+        ("testAsyncCustomQueueConcurrent", testAsyncCustomQueueConcurrent),
+        ("testAsyncCustomQueueSerial", testAsyncCustomQueueSerial),
+        ("testAsyncBackgroundToMain", testAsyncBackgroundToMain),
+        ("testChaining", testChaining),
+        ("testAsyncCustomQueueChaining", testAsyncCustomQueueChaining),
+        ("testAfterGCD", testAfterGCD),
+        ("testAfterMain", testAfterMain),
+        ("testAfterUserInteractive", testAfterUserInteractive),
+        ("testAfterUserInitated", testAfterUserInitated),
+        ("testAfterUtility", testAfterUtility),
+        ("testAfterBackground", testAfterBackground),
+        ("testAfterCustomQueue", testAfterCustomQueue),
+        ("testAfterChainedMix", testAfterChainedMix),
+        ("testAfterChainedUserInteractive", testAfterChainedUserInteractive),
+        ("testAfterChainedUserInitiated", testAfterChainedUserInitiated),
+        ("testAfterChainedUtility", testAfterChainedUtility),
+        ("testAfterChainedBackground", testAfterChainedBackground),
+        ("testCancel", testCancel),
+        ("testWait", testWait),
+        ("testWaitMax", testWaitMax),
+        ("testGenericsChain", testGenericsChain),
+        ("testGenericsWait", testGenericsWait),
+        ("testGenericsWaitMax", testGenericsWaitMax),
+        ("testApplyUserInteractive", testApplyUserInteractive),
+        ("testApplyUserInitiated", testApplyUserInitiated),
+        ("testApplyUtility", testApplyUtility),
+        ("testApplyBackground", testApplyBackground),
+        ("testApplyCustomQueueConcurrent", testApplyCustomQueueConcurrent),
+        ("testApplyCustomQueueSerial", testApplyCustomQueueSerial)
+    ]
+    #endif
 }
-
-#if os(Linux)
-extension Async {
-    static var allTests: [(String, AsyncTests -> () throws -> Void)] {
-        return [
-            ("testGCD", testGCD),
-            ("testAsyncMain", testAsyncMain),
-            ("testAsyncUserInteractive", testAsyncUserInteractive),
-            ("testAsyncUserInitiated", testAsyncUserInitiated),
-            ("testAsyncUtility", testAsyncUtility),
-            ("testAsyncBackground", testAsyncBackground),
-            ("testAsyncCustomQueueConcurrent", testAsyncCustomQueueConcurrent),
-            ("testAsyncCustomQueueSerial", testAsyncCustomQueueSerial),
-            ("testAsyncBackgroundToMain", testAsyncBackgroundToMain),
-            ("testChaining", testChaining),
-            ("testAsyncCustomQueueChaining", testAsyncCustomQueueChaining),
-            ("testAfterGCD", testAfterGCD),
-            ("testAfterMain", testAfterMain),
-            ("testAfterUserInteractive", testAfterUserInteractive),
-            ("testAfterUserInitated", testAfterUserInitated),
-            ("testAfterUtility", testAfterUtility),
-            ("testAfterBackground", testAfterBackground),
-            ("testAfterCustomQueue", testAfterCustomQueue),
-            ("testAfterChainedMix" testAfterChainedMix),
-            ("testAfterChainedUserInteractive", testAfterChainedUserInteractive),
-            ("testAfterChainedUserInitiated", testAfterChainedUserInitiated),
-            ("testAfterChainedUtility", testAfterChainedUtility),
-            ("testAfterChainedBackground", testAfterChainedBackground),
-            ("testCancel", testCancel),
-            ("testWait", testWait),
-            ("testWaitMax", testWaitMax),
-            ("testGenericsChain", testGenericsChain),
-            ("testGenericsWait", testGenericsWait),
-            ("testGenericsWaitMax", testGenericsWaitMax),
-            ("testApplyUserInteractive", testApplyUserInteractive),
-            ("testApplyUserInitiated", testApplyUserInitiated),
-            ("testApplyUtility", testApplyUtility),
-            ("testApplyBackground", testApplyBackground),
-            ("testApplyCustomQueueConcurrent", testApplyCustomQueueConcurrent),
-            ("testApplyCustomQueueSerial", testApplyCustomQueueSerial)
-        ]
-    }
-}
-#endif

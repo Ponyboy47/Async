@@ -26,7 +26,7 @@ class AsyncGroupTests: XCTestCase {
         group.main {
             #if (arch(i386) || arch(x86_64)) && (os(iOS) || os(tvOS)) // Simulator
                 XCTAssert(Thread.isMainThread, "Should be on main thread (simulator)")
-            #else
+            #elseif !os(Linux)
                 XCTAssertEqual(qos_class_self(), qos_class_main())
             #endif
             expectation.fulfill()
@@ -38,7 +38,9 @@ class AsyncGroupTests: XCTestCase {
         let expectation = self.expectation(description: "Expected on user interactive queue")
         let group = AsyncGroup()
         group.userInteractive {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInteractive.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -48,7 +50,9 @@ class AsyncGroupTests: XCTestCase {
         let expectation = self.expectation(description: "Expected on user initiated queue")
         let group = AsyncGroup()
         group.userInitiated {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.userInitiated.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -58,7 +62,9 @@ class AsyncGroupTests: XCTestCase {
         let expectation = self.expectation(description: "Expected on utility queue")
         let group = AsyncGroup()
         group.utility {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.utility.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -68,7 +74,9 @@ class AsyncGroupTests: XCTestCase {
         let expectation = self.expectation(description: "Expected on background queue")
         let group = AsyncGroup()
         group.background {
+            #if !os(Linux)
             XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+            #endif
             expectation.fulfill()
         }
         waitForExpectations(timeout: timeMargin, handler: nil)
@@ -147,7 +155,9 @@ class AsyncGroupTests: XCTestCase {
         let group = AsyncGroup()
         for i in iterations {
             group.background {
+                #if !os(Linux)
                 XCTAssertEqual(qos_class_self(), QOS_CLASS_BACKGROUND)
+                #endif
                 expectations[i].fulfill()
                 counter += 1
             }
@@ -166,7 +176,9 @@ class AsyncGroupTests: XCTestCase {
         for i in iterations {
             group.enter()
             Async.background {
+                #if !os(Linux)
                 XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+                #endif
                 expectations[i].fulfill()
                 counter += 1
                 group.leave()
@@ -186,7 +198,9 @@ class AsyncGroupTests: XCTestCase {
         let group = AsyncGroup()
         for i in iterations {
             group.background {
+                #if !os(Linux)
                 XCTAssertEqual(qos_class_self(), DispatchQoS.QoSClass.background.rawValue)
+                #endif
                 expectations[i].fulfill()
                 group.enter()
                 Async.background {
@@ -201,25 +215,20 @@ class AsyncGroupTests: XCTestCase {
         waitForExpectations(timeout: timeMargin, handler: nil)
     }
 
+    #if os(Linux)
+    static var allTests = [
+        ("testMainGroup", testMainGroup),
+        ("testUserInteractiveGroup", testUserInteractiveGroup),
+        ("testUserInitiatedGroup", testUserInitiatedGroup),
+        ("testUtilityGroup", testUtilityGroup),
+        ("testBackgroundGroup", testBackgroundGroup),
+        ("testGroupCustomQueueConcurrent", testGroupCustomQueueConcurrent),
+        ("testGroupCustomQueueSerial", testGroupCustomQueueSerial),
+        ("testGroupWait", testGroupWait),
+        ("testGroupWaitMax", testGroupWaitMax),
+        ("testMultipleGroups", testMultipleGroups),
+        ("testCustomBlockGroups", testCustomBlockGroups),
+        ("testNestedAsyncGroups", testNestedAsyncGroups)
+    ]
+    #endif
 }
-
-#if os(Linux)
-extension AsyncGroupTests {
-    static var allTests: [(String, AsyncGroupTests -> () throws -> Void)] {
-        return [
-            ("testMainGroup", testMainGroup),
-            ("testUserInteractiveGroup", testUserInteractiveGroup),
-            ("testUserInitiatedGroup", testUserInitiatedGroup),
-            ("testUtilityGroup", testUtilityGroup),
-            ("testBackgroundGroup", testBackgroundGroup),
-            ("testGroupCustomQueueConcurrent", testGroupCustomQueueConcurrent),
-            ("testGroupCustomQueueSerial", testGroupCustomQueueSerial),
-            ("testGroupWait", testGroupWait),
-            ("testGroupWaitMax", testGroupWaitMax),
-            ("testMultipleGroups", testMultipleGroups),
-            ("testCustomBlockGroups", testCustomBlockGroups),
-            ("testNestedAsyncGroups", testNestedAsyncGroups)
-        ]
-    }
-}
-#endif

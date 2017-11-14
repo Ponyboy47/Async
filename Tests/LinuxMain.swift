@@ -1,5 +1,5 @@
 import XCTest
-@testable import AsyncTestSuite
+@testable import AsyncTests
 
 XCTMain([
     testCase(AsyncTests.allTests),

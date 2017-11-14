@@ -1,3 +1,5 @@
+// swift-tools-version:4.0
+
 //
 //  Async.swift
 //
@@ -26,5 +28,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "Async"
+    name: "Async",
+    products: [
+        .library(
+            name: "Async",
+            targets: ["Async"]),
+    ],
+    dependencies: [
+    ],
+    targets: [
+        .target(
+            name: "Async",
+            dependencies: []),
+        .testTarget(
+            name: "AsyncTests",
+            dependencies: ["Async"]),
+    ]
 )
